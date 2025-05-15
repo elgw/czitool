@@ -1,0 +1,35 @@
+[project]
+name = "czitool"
+version = "0.1.0"
+description = "Convert czi to tiff at the command line"
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["czitool"]
+authors = [{name = "Erik Wernersson", email = "erik.wernersson@scilifelab.se"}]
+classifiers = [
+    "Operating System :: Linux",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+             "python-bioformats",
+             "tifffile",
+             "numpy"
+             ]
+
+[project.optional-dependencies]
+test = ["pytest", "coverage"]
+
+[project.scripts]
+czitool = "czitool.__main__:cli"
+
+[project.urls]
+"Source" = "https://github.com/elgw/czitool"
+"Tracker" = "https://github.com/elgw/czitool/issues"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
