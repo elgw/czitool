@@ -1,6 +1,6 @@
 # czitool
 
-Converts czi image data to tiff files
+A throwaway script that converts czi image data to tiff files
 Only supports one FOV per czi image, but will trigger a failed assert
 if that is not met.
 
@@ -15,6 +15,9 @@ CCDN1_TX-02(10)-AP
 ├── AF568-T1_001.tif
 └── DAPI-T3_001.tif
 ```
+
+I.e., the naming convention is the same as for
+[nd2tool](https://www.github.com/elgw/nd2tool)
 
 Usage:
 

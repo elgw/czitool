@@ -7,6 +7,7 @@ Will for each XYZ.czi a folder called XYZ will be generated with one
 tif file per channel
 
 Example: The input file 'CCDN1_TX-02(10)-AP.czi' generates
+
 CCDN1_TX-02(10)-AP
 ├── AF488-T2_001.tif
 ├── AF568-T1_001.tif
