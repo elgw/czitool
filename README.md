@@ -4,7 +4,6 @@ A throwaway script that converts czi image data to tiff files with the
 naming convention used by
 [nd2tool](https://www.github.com/elgw/nd2tool)
 
-
 For each input `XYZ.czi` file, a folder called `XYZ` will be generated
 with one tif file per channel and series. Also the XML metadata will
 be dumped to `czitool.log.txt`.
@@ -54,11 +53,11 @@ Example Usage:
 pipx install .
 ```
 
-## Todo
+## Could be done
 
-- It would of course be nice to use
+- Use
   [ZEISS/libczi](https://github.com/ZEISS/libczi) directly.
-- Support more types of images
+- Support more types of images (for example time series).
 - Add some command line options, ... (`--overwrite`, `--fov 1:10`, etc)
 - Delete temporary files on crash/abort.
 - Write ImageJ metadata to the tiff files.
