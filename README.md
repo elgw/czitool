@@ -34,3 +34,11 @@ Example Usage:
 ``` shell
 pipx install .
 ```
+
+
+## Todo
+
+- It would of course be nice to use
+  [ZEISS/libczi](https://github.com/ZEISS/libczi) directly.
+- Support more types of images
+- Add some command line options, ...
