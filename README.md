@@ -1,11 +1,17 @@
 # czitool
 
-A throwaway script that converts czi image data to tiff files
+A throwaway script that converts czi image data to tiff files with the
+naming convention used by
+[nd2tool](https://www.github.com/elgw/nd2tool)
 
-Will for each `XYZ.czi` a folder called `XYZ` will be generated with
-one tif file per channel.
 
-Example: The input file `CCDN1_TX-02(10)-AP.czi` generates
+For each input `XYZ.czi` file, a folder called `XYZ` will be generated
+with one tif file per channel and series. Also the XML metadata will
+be dumped to `czitool.log.txt`.
+
+Example:
+
+The input file `CCDN1_TX-02(10)-AP.czi` containing a single FOV generates
 
 ``` shell
 CCDN1_TX-02(10)-AP
@@ -15,7 +21,7 @@ CCDN1_TX-02(10)-AP
 └── DAPI-T3_001.tif
 ```
 
-A file with multiple series and channels would generate:
+The file `CCDN1_TX_2-01-AP.czi` with multiple series and channels generates:
 
 ``` shell
 CCDN1_TX_2-01-AP
@@ -32,10 +38,7 @@ CCDN1_TX_2-01-AP
 ...
 ```
 
-I.e., the naming convention is the same as for
-[nd2tool](https://www.github.com/elgw/nd2tool)
-
-Usage:
+## Usage:
 
 `$ czitool file1.czi, file2.czi ...`
 
@@ -56,5 +59,8 @@ pipx install .
 - It would of course be nice to use
   [ZEISS/libczi](https://github.com/ZEISS/libczi) directly.
 - Support more types of images
-- Add some command line options, ...
+- Add some command line options, ... (`--overwrite`, `--fov 1:10`, etc)
 - Delete temporary files on crash/abort.
+- Write ImageJ metadata to the tiff files.
+- Summarize the important properties from the metadata (instead of
+  just dumping the whole XML).
