@@ -1,8 +1,6 @@
 # czitool
 
 A throwaway script that converts czi image data to tiff files
-Only supports one FOV per czi image, but will trigger a failed assert
-if that is not met.
 
 Will for each `XYZ.czi` a folder called `XYZ` will be generated with
 one tif file per channel.
@@ -13,7 +11,25 @@ Example: The input file `CCDN1_TX-02(10)-AP.czi` generates
 CCDN1_TX-02(10)-AP
 ├── AF488-T2_001.tif
 ├── AF568-T1_001.tif
+├── czitool.log.txt
 └── DAPI-T3_001.tif
+```
+
+A file with multiple series and channels would generate:
+
+``` shell
+CCDN1_TX_2-01-AP
+├── AF488-T2_001.tif
+├── AF488-T2_002.tif
+├── AF488-T2_003.tif
+├── AF568-T1_001.tif
+├── AF568-T1_002.tif
+├── AF568-T1_003.tif
+├── czitool.log.txt
+├── DAPI-T3_001.tif
+├── DAPI-T3_002.tif
+├── DAPI-T3_003.tif
+...
 ```
 
 I.e., the naming convention is the same as for
@@ -25,7 +41,7 @@ Usage:
 
 Example Usage:
 
-`$ python czitool.py /srv/secondary/ki/20250515_3D_FISH_Roser/*.czi`
+`$ czitool /srv/secondary/ki/20250515_3D_FISH_Roser/*.czi`
 
 ## Installation
 
@@ -35,10 +51,10 @@ Example Usage:
 pipx install .
 ```
 
-
 ## Todo
 
 - It would of course be nice to use
   [ZEISS/libczi](https://github.com/ZEISS/libczi) directly.
 - Support more types of images
 - Add some command line options, ...
+- Delete temporary files on crash/abort.
