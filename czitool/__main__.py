@@ -28,14 +28,17 @@ web page: https://www.github.com/elgw/czitool/
 For bioformats, see https://pythonhosted.org/python-bioformats/
 
 To run without install:
+$ source .venv/bin/activate
 $ python czitool/__main__.py /srv/secondary/ki/20250515_3D_FISH_Roser/16.5.25/CCDN1_TX_2-01-AP.czi
 """
 
 
 import os
 import sys
-import javabridge
+
 import bioformats
+
+import javabridge
 import tifffile
 import numpy as np
 import tempfile
@@ -50,7 +53,8 @@ def get_outdir(fname):
 def read_image(reader=None, M=None, N=None, P=None, chan_id=None, series=0):
     im = np.zeros((P, N, M), dtype=np.float32)
     for z in range(0, P):
-        im[z, :, :] = reader.read(c=chan_id, z=z, series=series)
+        im[z, :, :] = reader.read(c=chan_id, z=z, series=series, rescale=False)
+
     return im
 
 def czi_to_tiff(fname):
@@ -95,7 +99,18 @@ def cli():
         print(helpstr)
         sys.exit(1)
 
+    # This suppresses the warning messages, solution found at
+    # https://forum.image.sc/t/python-bioformats-and-javabridge-debug-messages/12578/12
+    myloglevel="ERROR"  # user string argument for logLevel.
+
     javabridge.start_vm(class_path=bioformats.JARS)
+
+    rootLoggerName = javabridge.get_static_field("org/slf4j/Logger","ROOT_LOGGER_NAME", "Ljava/lang/String;")
+    rootLogger = javabridge.static_call("org/slf4j/LoggerFactory","getLogger", "(Ljava/lang/String;)Lorg/slf4j/Logger;", rootLoggerName)
+    logLevel = javabridge.get_static_field("ch/qos/logback/classic/Level",myloglevel, "Lch/qos/logback/classic/Level;")
+    javabridge.call(rootLogger, "setLevel", "(Lch/qos/logback/classic/Level;)V", logLevel)
+
+
 
     for fname in sys.argv[1:]:
         czi_to_tiff(fname)

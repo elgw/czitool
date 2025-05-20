@@ -65,3 +65,9 @@ pipx install .
 - Summarize the important properties from the metadata (instead of
   just dumping the whole XML).
 - Find some other tool that does all of this already.
+
+## Changelog
+
+- 0.1.1, 2025-05-20
+  - Suppression of errors from bioformats.
+  - Exporting non-scaled pixel values to the tif files.

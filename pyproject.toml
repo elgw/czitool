@@ -1,6 +1,6 @@
 [project]
 name = "czitool"
-version = "0.1.0"
+version = "0.1.1"
 description = "Convert czi to tiff at the command line"
 license = "MIT"
 readme = "README.md"
