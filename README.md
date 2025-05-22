@@ -46,6 +46,7 @@ Example Usage:
 `$ czitool /srv/secondary/ki/20250515_3D_FISH_Roser/*.czi`
 
 ## Installation
+Requires `javac`, install that with `sudo apt install default-jdk` or similar.
 
 - Install the script with [pipx](https://github.com/pypa/pipx)
 

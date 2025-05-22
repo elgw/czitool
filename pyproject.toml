@@ -8,13 +8,14 @@ requires-python = ">=3.10"
 keywords = ["czitool"]
 authors = [{name = "Erik Wernersson", email = "erik.wernersson@scilifelab.se"}]
 classifiers = [
-    "Operating System :: Linux",
+    "Operating System :: Linux",    
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 
 dependencies = [
+             "python-javabridge",
              "python-bioformats",
              "tifffile",
              "numpy"
