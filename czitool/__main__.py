@@ -51,19 +51,15 @@ def read_image(czidoc=None, M=None, N=None, P=None, chan_id=None, series=0, roi=
     im = np.zeros((P, N, M), dtype=np.float32)
 
     for z in range(0, P):
-        #breakpoint()
         im[z, :, :] = np.squeeze(czidoc.read(roi=roi, plane={'C': chan_id, 'Z': z, 'T': series}), axis=2)
 
     return im
 
-def czi_to_tiff(fname):
-    print(f"Processing {fname}")
-    outdir = get_outdir(fname)
-
-    if not os.path.isdir(outdir):
-        os.mkdir(outdir)
-
+def process_file(fname : str):
     with czi.open_czi(fname) as czidoc:
+
+        if not os.path.isdir(outdir):
+            os.mkdir(outdir)
 
         my_dict = czidoc.metadata
         my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]
@@ -88,18 +84,31 @@ def czi_to_tiff(fname):
         for fov in range(0, nFOV):
             print(f"Converting FOV {fov+1}/{nFOV}")
 
-            #print(f"size = {M} x {N} x {P}")
             for ch, chname in enumerate(cnames):
                 M = rectangles[fov].w
                 N = rectangles[fov].h
-                print(f"Channel {ch} : {chname}")
-                # breakpoint()
+                # print(f"Channel {ch} : {chname}")
                 im = read_image(czidoc=czidoc, M=M, N=N, P=P, chan_id=ch, series=fov, roi=rectangles[fov])
                 outfile = os.path.join(outdir, f"{chname}_{fov+1:03}.tif")
                 tfd, tnam = tempfile.mkstemp(dir=outdir, text=False)
                 print(f"-> {outfile} ({tnam})")
                 tifffile.imwrite(tnam, data=im)
                 os.rename(tnam, outfile)
+
+def czi_to_tiff(fname):
+
+    if not os.path.isfile(fname):
+        print(f"Can't open {fname} -- not a file")
+        return
+
+    print(f"Processing {fname}")
+    outdir = get_outdir(fname)
+
+    try:
+        process_file(fname)
+    except RuntimeError:
+        print(f"{fname} can not be opened as a czi file")
+        return
 
 
 def cli():
