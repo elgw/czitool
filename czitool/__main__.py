@@ -39,6 +39,25 @@ from pylibCZIrw import czi
 import tifffile
 import numpy as np
 
+def nfind(field_name, d, current_path=''):
+    if not isinstance(d, dict):
+        return
+
+    if field_name in d:
+        yield current_path
+
+    for k in d:
+        if isinstance(d[k], list):
+            index = 0
+            for array_element in d[k]:
+                for j in nfind(field_name, array_element, current_path + f'.{k}.[{index}]'):
+                    yield j
+
+                index += 1
+
+        elif isinstance(d[k], dict):
+            for found in nfind(field_name, d[k], current_path + f'.{k}'):
+                yield found
 
 def get_outdir(fname):
     parts = os.path.split(fname)
@@ -47,7 +66,9 @@ def get_outdir(fname):
     outdir = os.path.join(parts[0], fname)
     return outdir
 
-def read_image(czidoc=None, M=None, N=None, P=None, chan_id=None, series=0, roi=None):
+def read_image(czidoc=None, P=None, chan_id=None, series=0, roi=None):
+    M = roi.w
+    N = roi.h
     im = np.zeros((P, N, M), dtype=np.float32)
 
     for z in range(0, P):
@@ -56,43 +77,64 @@ def read_image(czidoc=None, M=None, N=None, P=None, chan_id=None, series=0, roi=
     return im
 
 def process_file(fname : str):
+    outdir = get_outdir(fname)
     with czi.open_czi(fname) as czidoc:
 
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
-        my_dict = czidoc.metadata
-        my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]
-        my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]["SizeC"]
-        nFOV = my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]["SizeS"]
+        meta = czidoc.metadata['ImageDocument']['Metadata']
+        nFOV = meta["Information"]["Image"]["SizeS"]
         nFOV = int(nFOV)
-        channels = my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]["Dimensions"]["Channels"]["Channel"];
+        channels =meta["Information"]["Image"]["Dimensions"]["Channels"]["Channel"];
+
         nC = len(channels)
         cnames = []
         for c in channels:
             cnames.append(c["@Name"])
 
-        P = my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]["SizeZ"]
-        P = int(P)
+        ## Number of planes per image. So each image in a czi file has to have
+        # the same number of planes?
+        P = int(meta["Information"]["Image"]["SizeZ"])
 
+        ## Figure out the pixel size
+        # 'DefaultUnitFormat' seems to indicate what unit to use when
+        # showing the distance, the value seems to be given in meters [m]
+        #
+        # In one of the files it said:
+        # meta["Scaling"]["Items"]["Distance"][0]['DefaultUnitFormat'] == 'µm':
+
+        dx = meta["Scaling"]["Items"]["Distance"][0]['Value']
+        dx_nm = float(dx)*1e9
+        dy = meta["Scaling"]["Items"]["Distance"][1]['Value']
+        dy_nm = float(dy)*1e9
+        dz = meta["Scaling"]["Items"]["Distance"][2]['Value']
+        dz_nm = float(dz)*1e9
+        print(f"Pixel size: {dx_nm:.1f} x {dy_nm:.1f} x {dz_nm:.1f} nm")
+
+        # Dump all the metadata for later reference.
         with open(outdir + os.sep + 'czitool.log.txt', 'w') as fid:
-            fid.write(str(my_dict))
+            fid.write(str(meta))
 
-        rectangles = czidoc.scenes_bounding_rectangle
+        # Each Field of View (FOV) is found in this dictionary
+        # of bounding rectangles. They key is the numerical id
+        # The roi_id's does not need to start at 0.
 
+        rects = czidoc.scenes_bounding_rectangle
 
-        for fov in range(0, nFOV):
-            print(f"Converting FOV {fov+1}/{nFOV}")
+        for ii, roi_id in enumerate(rects.keys()):
+            roi = rects[roi_id]
+            print(f"Converting FOV #{roi_id+1} ({ii+1}/{nFOV})")
 
             for ch, chname in enumerate(cnames):
-                M = rectangles[fov].w
-                N = rectangles[fov].h
                 # print(f"Channel {ch} : {chname}")
-                im = read_image(czidoc=czidoc, M=M, N=N, P=P, chan_id=ch, series=fov, roi=rectangles[fov])
-                outfile = os.path.join(outdir, f"{chname}_{fov+1:03}.tif")
+                im = read_image(czidoc=czidoc, P=P, chan_id=ch, series=roi_id, roi=roi)
+                outfile = os.path.join(outdir, f"{chname}_{roi_id+1:03}.tif")
                 tfd, tnam = tempfile.mkstemp(dir=outdir, text=False)
                 print(f"-> {outfile} ({tnam})")
-                tifffile.imwrite(tnam, data=im)
+
+                md = {'spacing': dz_nm, 'unit': 'nm', 'axes': 'ZYX'}
+                tifffile.imwrite(tnam, data=im, imagej=True, resolution=(1/dx_nm, 1/dy_nm), metadata=md)
                 os.rename(tnam, outfile)
 
 def czi_to_tiff(fname):
@@ -102,7 +144,6 @@ def czi_to_tiff(fname):
         return
 
     print(f"Processing {fname}")
-    outdir = get_outdir(fname)
 
     try:
         process_file(fname)

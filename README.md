@@ -61,7 +61,6 @@ pipx install .
 - Add some command line options: an `--overwrite` switch, a FOV
   selector, `--fov 1:10`, etc.
 - Delete temporary files on crash/abort.
-- Write ImageJ metadata to the tiff files.
 - Summarize the important properties from the metadata (instead of
   just dumping the whole XML).
 - Find some other tool that does all of this already.
@@ -72,6 +71,7 @@ pipx install .
   - Switched to
     [pylibCZIrw](https://pypi.org/project/pylibCZIrw/) since
     bioformats was unable to read some of my images.
+  - Writes some ImageJ metadata.
 
 - 0.1.1, 2025-05-20
   - Suppression of errors from bioformats.
