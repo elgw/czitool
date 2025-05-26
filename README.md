@@ -46,7 +46,6 @@ Example Usage:
 `$ czitool /srv/secondary/ki/20250515_3D_FISH_Roser/*.czi`
 
 ## Installation
-Requires `javac`, install that with `sudo apt install default-jdk` or similar.
 
 - Install the script with [pipx](https://github.com/pypa/pipx)
 
@@ -68,6 +67,11 @@ pipx install .
 - Find some other tool that does all of this already.
 
 ## Changelog
+
+- 0.1.2, 2025-05-26
+  - Switched to
+    [pylibCZIrw](https://pypi.org/project/pylibCZIrw/) since
+    bioformats was unable to read some of my images.
 
 - 0.1.1, 2025-05-20
   - Suppression of errors from bioformats.

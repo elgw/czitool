@@ -25,23 +25,20 @@ web page: https://www.github.com/elgw/czitool/
 """
 
 """
-For bioformats, see https://pythonhosted.org/python-bioformats/
-
 To run without install:
 $ source .venv/bin/activate
-$ python czitool/__main__.py /srv/secondary/ki/20250515_3D_FISH_Roser/16.5.25/CCDN1_TX_2-01-AP.czi
+$ python czitool/__main__.py /some/where/file.czi
 """
-
 
 import os
 import sys
+import tempfile
 
-import bioformats
-
-import javabridge
+# https://pypi.org/project/pylibCZIrw/
+from pylibCZIrw import czi
 import tifffile
 import numpy as np
-import tempfile
+
 
 def get_outdir(fname):
     parts = os.path.split(fname)
@@ -50,10 +47,12 @@ def get_outdir(fname):
     outdir = os.path.join(parts[0], fname)
     return outdir
 
-def read_image(reader=None, M=None, N=None, P=None, chan_id=None, series=0):
+def read_image(czidoc=None, M=None, N=None, P=None, chan_id=None, series=0, roi=None):
     im = np.zeros((P, N, M), dtype=np.float32)
+
     for z in range(0, P):
-        im[z, :, :] = reader.read(c=chan_id, z=z, series=series, rescale=False)
+        #breakpoint()
+        im[z, :, :] = np.squeeze(czidoc.read(roi=roi, plane={'C': chan_id, 'Z': z, 'T': series}), axis=2)
 
     return im
 
@@ -64,33 +63,43 @@ def czi_to_tiff(fname):
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
 
-    metadata = bioformats.get_omexml_metadata(path=fname)
-    o = bioformats.OMEXML(metadata)
+    with czi.open_czi(fname) as czidoc:
 
-    with open(outdir + os.sep + 'czitool.log.txt', 'w') as fid:
-        fid.write(str(o))
+        my_dict = czidoc.metadata
+        my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]
+        my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]["SizeC"]
+        nFOV = my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]["SizeS"]
+        nFOV = int(nFOV)
+        channels = my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]["Dimensions"]["Channels"]["Channel"];
+        nC = len(channels)
+        cnames = []
+        for c in channels:
+            cnames.append(c["@Name"])
 
-    print(o.image().get_Name())
-    print(o.image().get_AcquisitionDate())
+        P = my_dict["ImageDocument"]["Metadata"]["Information"]["Image"]["SizeZ"]
+        P = int(P)
 
-    nFOV = o.get_image_count()
+        with open(outdir + os.sep + 'czitool.log.txt', 'w') as fid:
+            fid.write(str(my_dict))
 
-    reader = bioformats.ImageReader(fname)
-    for fov in range(0, nFOV):
-        nC = o.image(fov).Pixels.get_channel_count()
-        M = o.image(fov).Pixels.get_SizeX()
-        N = o.image(fov).Pixels.get_SizeY()
-        P = o.image(fov).Pixels.get_SizeZ()
-        print(f"size = {M} x {N} x {P}")
-        for ch in range(0, nC):
-            chname = o.image(fov).Pixels.channel(ch).get_Name()
-            print(f"Channel {ch} : {chname}")
-            im = read_image(reader=reader, M=M, N=N, P=P, chan_id=ch, series=fov)
-            outfile = os.path.join(outdir, f"{chname}_{fov+1:03}.tif")
-            tfd, tnam = tempfile.mkstemp(dir=outdir, text=False)
-            print(f"-> {outfile} ({tnam})")
-            tifffile.imwrite(tnam, data=im)
-            os.rename(tnam, outfile)
+        rectangles = czidoc.scenes_bounding_rectangle
+
+
+        for fov in range(0, nFOV):
+            print(f"Converting FOV {fov+1}/{nFOV}")
+
+            #print(f"size = {M} x {N} x {P}")
+            for ch, chname in enumerate(cnames):
+                M = rectangles[fov].w
+                N = rectangles[fov].h
+                print(f"Channel {ch} : {chname}")
+                # breakpoint()
+                im = read_image(czidoc=czidoc, M=M, N=N, P=P, chan_id=ch, series=fov, roi=rectangles[fov])
+                outfile = os.path.join(outdir, f"{chname}_{fov+1:03}.tif")
+                tfd, tnam = tempfile.mkstemp(dir=outdir, text=False)
+                print(f"-> {outfile} ({tnam})")
+                tifffile.imwrite(tnam, data=im)
+                os.rename(tnam, outfile)
 
 
 def cli():
@@ -99,23 +108,8 @@ def cli():
         print(helpstr)
         sys.exit(1)
 
-    # This suppresses the warning messages, solution found at
-    # https://forum.image.sc/t/python-bioformats-and-javabridge-debug-messages/12578/12
-    myloglevel="ERROR"  # user string argument for logLevel.
-
-    javabridge.start_vm(class_path=bioformats.JARS)
-
-    rootLoggerName = javabridge.get_static_field("org/slf4j/Logger","ROOT_LOGGER_NAME", "Ljava/lang/String;")
-    rootLogger = javabridge.static_call("org/slf4j/LoggerFactory","getLogger", "(Ljava/lang/String;)Lorg/slf4j/Logger;", rootLoggerName)
-    logLevel = javabridge.get_static_field("ch/qos/logback/classic/Level",myloglevel, "Lch/qos/logback/classic/Level;")
-    javabridge.call(rootLogger, "setLevel", "(Lch/qos/logback/classic/Level;)V", logLevel)
-
-
-
     for fname in sys.argv[1:]:
         czi_to_tiff(fname)
-
-    javabridge.kill_vm()
 
 if __name__ == "__main__":
     # Running as uninstalled script
