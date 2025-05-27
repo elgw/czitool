@@ -84,8 +84,13 @@ def process_file(fname : str):
             os.mkdir(outdir)
 
         meta = czidoc.metadata['ImageDocument']['Metadata']
-        nFOV = meta["Information"]["Image"]["SizeS"]
-        nFOV = int(nFOV)
+        nFOV = 1
+        try:
+            nFOV = meta["Information"]["Image"]["SizeS"]
+            nFOV = int(nFOV)
+        except:
+            print(f"The files does not contain Information->Image->SizeS, only one FOV?")
+
         channels =meta["Information"]["Image"]["Dimensions"]["Channels"]["Channel"];
 
         nC = len(channels)
@@ -95,6 +100,8 @@ def process_file(fname : str):
 
         ## Number of planes per image. So each image in a czi file has to have
         # the same number of planes?
+
+
         P = int(meta["Information"]["Image"]["SizeZ"])
 
         ## Figure out the pixel size
@@ -121,6 +128,11 @@ def process_file(fname : str):
         # The roi_id's does not need to start at 0.
 
         rects = czidoc.scenes_bounding_rectangle
+
+        # For a single FOV, sometimes this is set instead
+
+        if(len(rects) == 0):
+            rects = {0: czidoc.total_bounding_rectangle}
 
         for ii, roi_id in enumerate(rects.keys()):
             roi = rects[roi_id]
